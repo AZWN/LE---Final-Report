@@ -1,0 +1,45 @@
+\section{Implementation} \label{s:implementation}
+
+In this chapter we will describe how we implemented several features of the Rust type system in Statix. First, we shortly focus on the regular typing of variables and expressions. In the second part we will explain how we implemented several substructural/linear type system features.
+
+\subsection{Regular typing}
+
+The basis of the Rust type system are types as they are occurring in many statically-typed languages. As such, we created rules \code{typeOfExpr} that give every expression its appropriate type. As primary types, \code{BOOL()}, \code{NUM()} and \code{UNIT()}, are available. Regarding numeric types, we choose to not exactly resemble the Rust type system with respect to sizes and signs (i.e. having \code{i8}, \code{u64} etc.), but have only one type: \code{NUM()}. Having multiple numeric types would come with a lot of inference rules and type coercion, which is out of scope for this project.
+
+For each variable, we annotated the scope graph with \code{type: occurrence -> DataType} relations, which can be queried from subscopes.
+
+\subsubsection{Struct types}
+
+For struct types, we implemented a special type, having a scope parameter (\code{STRUCT: scope -> DataType}). In this scope, fields are declared. When type-checking a field access, the scope of the struct for which a field is accessed can be (recursively) found and queried.
+
+\subsubsection{Functions}
+
+Functions are implemented straightforward as well. Every function has as its type a list of input types, and an output type. Since in Rust, it is possible to assign a function reference to a variable, we chose to have them in the same namespace \code{Var}.
+
+\subsection{Mutable types}
+
+In Rust, variables can be either mutable or immutable. We have thought of three different ways to encode this mutability:
+\begin{enumerate}
+    \item Have a \code{Mut()}/\code{Immut()} parameter on each type
+    \item Implement a type \code{VarType: Mutability * DataType}, to be able to annotate mutability on a \code{DataType}
+    \item Implement a separate type \code{MUT: DataType -> DataType}
+\end{enumerate}
+
+Obviously, the first option would lead to a lot of unnecessary code duplication, verbosity and clutter, since at many places, the mutability can not be determined accurately, or simply is not relevant. Many expressions can be applied on (a mix of) mutable and immutable values, and then mutability is not important.
+
+The second option would solve a many of these problems. By assigning expressions a \code{DataType}, and variables a \code{VarType}. 
+% DOMINIQUE: Deze hebben we geprobeerd, maar niet gedaan. Weet je nog waarom????
+
+Eventually, we went for the third options, since it gave the most flexibility on when to use mutability, and when not to. Possible coercions from mutable to immutable types are implemented by applying the rule \code{stripMut}.
+
+\subsection{References}
+
+In order to implement a borrow checker, having reference types is important. We thought if 2 ways to implement references:
+\begin{enumerate}
+    \item Have 2 additional types: \code{MutRef: DataType -> DataType} and \code{ImmutRef: DataType -> DataType}
+    \item Have 1 additional type \code{REF: Mutability * DataType -> DataType}
+\end{enumerate}
+
+The first important thing to note here is that variable mutability is not the same as reference mutability. Variable mutability means that a variable (or a field, in case of a struct) can be reassigned.
+
+Both ways are equivalent in expressiveness and verboseness. We choose the second options, since it made it easier for us to handle cases where mutability is not im

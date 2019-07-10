@@ -1,0 +1,98 @@
+\newglossaryentry{macro} {
+  name=macro,
+  description={Language construct that expands to regular code before actual compilation happens. They can be recognized by the trailing \code{!}. In contrast to functions, they are not compiled to lower level representations. They are also more flexible (having variable arguments) than regular Rust functions}
+}
+
+\newglossaryentry{Result} {
+  name=Result,
+  description={A type that is either an \code{Ok} representing success and containing a value, or \code{Err} representing an error and containing an error message}
+}
+
+\newglossaryentry{Option} {
+  name=Option,
+  description={A type representing an optional value, an Option is either \code{Some} and contains a value, or \code{None} and does not}
+}
+
+\newglossaryentry{hidden_panic} {
+  name=hidden panic,
+  description={Calls to \gls{panic} in library code, of which the user of this library code is not aware}
+}
+
+\newglossaryentry{panic!} {
+  name=panic!,
+  description={The \gls{macro} that forms the entry point for \gls{panic} in Rust threads}
+}
+
+\newglossaryentry{panic} {
+  name=panic,
+  description={Rust's way of saying that the program ended up in a unrecoverable state, which leads to a premature thread or program exit}
+}
+
+\newglossaryentry{cargo} {
+  name=cargo,
+  % Copied from $cargo --help
+  description={Rust's package manager}
+}
+
+\newglossaryentry{unsafe} {
+  name=unsafe,
+  description={Rust keyword to disable Rust's safety checks in particular code blocks}
+}
+
+\newglossaryentry{unwrap} {
+  name=unwrap,
+  description={Function that returns the value contained in an \gls{Option} or \gls{Result} if it represented \code{Some} or \code{Ok}, respectively. Unwrap \glss{panic} whenever this is not the case and either \code{None} or \code{Err} is encountered}
+}
+
+\newglossaryentry{rustc} {
+    name=rustc,
+    description={The Rust compiler}
+}
+
+\newglossaryentry{crate} {
+    name=crate,
+    plural=crates,
+    description={Rust software package}
+}
+
+\newglossaryentry{ELF} {
+    name={ELF},
+    % From wiki
+    description={Executable and Linking Format. A common standard file format for executable files, object code, shared libraries, and core dumps}
+}
+
+\newglossaryentry{AST} {
+    name={AST},
+    description={Abstract syntax tree. A tree representation of the abstract syntactic structure of source code written in a programming language}
+}
+
+\newglossaryentry{FOSS} {
+    name={FOSS},
+    description={Free Open Source Software. Software that can be classified as both free software and open-source software. That is, anyone is freely licensed to use, copy, study, and change the software in any way, and the source code is openly shared so that people are encouraged to voluntarily improve the design of the software}
+}
+
+\newglossaryentry{DWARF} {
+    name={DWARF},
+    description={A standardized debugging data format}
+}
+
+\newglossaryentry{rustup} {
+    name={rustup},
+    description={Rust toolchain installer}
+}
+
+\newglossaryentry{gcc} {
+    name={gcc},
+    description={GNU C compiler}
+}
+
+
+\newglossaryentry{llvm} {
+    name={{LLVM}},
+    description={Low Level Virtual Machine. A collection of modular and reusable compiler and toolchain technologies used to develop compiler front ends and back ends}
+}
+
+\newglossaryentry{gprof} {
+    name={gprof},
+    description={GNU profiler}
+}
