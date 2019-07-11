@@ -1,13 +1,47 @@
 \section{Discussion}
 
+In this section, we will reflect on the implementation of the Rust typesystem.
+
 \subsection{Coverage}
+
+In this section, we will describe the features of the type system we have and have not covered. We will also assess if implementing these features would, on a conceptual level, be different from the features we have.
 
 \subsubsection{Regular types}
 
-% Arrays
-% Numeric coercions
-% Generics
-% trait implementation
+Regarding the regular, nominal type system, we have not convered the following features:
+
+\begin{itemize}
+	\item Parameterized types
+	\item Tuples
+	\item Enums
+	\item Traits
+	\item Arrays and slices
+	\item Numeric coercions
+\end{itemize}
+
+\subsubsubsection{Parameterized types}
+
+Rust offers a very rich type system for parameterized types. Any struct, enum or trait can have an arbitrary number of type parameters, and over each of these parameters constraints can be defined, like XXXXXX.
+
+When statix was PUBLISHED, a sample implementing a parametric type system was given, proving that statix is powerfull enough to implement such type systems. COMPARE THIS TS TO RUST? MISSING FEATURES?
+
+\subsubsubsection{Tuples}
+
+In fact, tuples, and matching expressions on them can be desugared to regular structs, where each component has its index as field name. For example \code{(1, true)} would be desugared to \code{Tuple2<i32, bool> { 0: 1, 1: true}}. This allows accessing tuple members by their index (e.g. \code{tuple.0}, which is valid syntax in Rust.
+
+Therefore, we think that adding tuples to the existing type system will be well doable, and would not given better insight in either Rust or Statix.
+
+\subsubsubsection{Enums}
+
+% Move checking in enums/ref keyword
+
+\subsubsubsection{Traits}
+
+\subsubsubsection{Arrays and slices}
+
+\subsubsubsection{Numeric coercions}
+
+As we mentioned in section XXX, we implemented just one numeric type: \code{NUM()}
 
 \subsubsection{Move checking}
 
