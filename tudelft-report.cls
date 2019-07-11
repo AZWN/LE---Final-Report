@@ -49,11 +49,11 @@
     \fi
 \fi
 \RequirePackage{metalogo}
-\RequirePackage[numbers,sort&compress]{natbib}
+% \RequirePackage[numbers,sort&compress]{natbib}
 \RequirePackage{tikz}
 \RequirePackage[noindentafter]{titlesec}
 \RequirePackage{titletoc}
-\RequirePackage[nottoc]{tocbibind}
+% \RequirePackage[nottoc]{tocbibind}
 \RequirePackage{xcolor}
 \RequirePackage{xkeyval}
 
@@ -495,7 +495,7 @@
 \renewcommand*\labelitemiv{\color{title}\textperiodcentered}
 
 %% Use a custom bibliography style based on apsrev4-1.
-\bibliographystyle{IEEEtran}
+% \bibliographystyle{IEEEtran}
 
 %% Hyperlinks are cyan, except in print mode, when they are all black.
 \hypersetup{
