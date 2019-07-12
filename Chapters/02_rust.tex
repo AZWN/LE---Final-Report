@@ -43,7 +43,7 @@ fn main() {
 }
 \end{lstlisting}
 
-Borrowing gets more complicated when we introduce the notion of partial borrows. Sub-fields of a struct can be freely borrowed, since these fields are disjoint. In \autoref{lst:dataraces_partial}, we show a case of partial borrowing. Here, the sub-fields $a$ and $b$ can be freely borrowed. However, when we try to borrow the super-field $y$ (or a sub-field of $a$ or $b$), the rust compiler will reject the program.
+Borrowing gets more complicated when we introduce the notion of partial borrows. Sub-fields of a struct can be freely borrowed, since these fields are disjoint. In \autoref{lst:dataraces_partial}, we show a case of partial borrowing. Here, the sub-fields $a$ and $b$ can be freely borrowed. However, when the super-field $y$ (or a sub-field of $a$ or $b$) is borrowed, the rust compiler will reject the program.
  \begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:dataraces_partial}, caption={Example of partial borrows}]
 fn main() { 
     let mut y = Foo{a : 3, b : 5};
@@ -54,8 +54,8 @@ fn main() {
 }
 \end{lstlisting}
 
-\subsection{Ownership}
-In Rust, ownership of values allows Rust to be memory-safe without the use of a garbage collector\cite{rust_book_ownership}. When assigning values to another owner, the ownership of the value is moved. The original owner of the value can then no longer be used to reference the value. The change of ownership is permanent and is based on the control-flow of the program, rather than the current scope. Furthermore, Similarly to borrows, it is also possible to partially move a value.
+\subsection{Ownership} \label{sec:ownership}
+In Rust, ownership of values allows Rust to be\\ memory-safe without the use of a garbage collector\cite{rust_book_ownership}. When assigning values to another owner, the ownership of the value is moved. The original owner of the value can then no longer be used to reference the value. The change of ownership is permanent and is based on the control-flow of the program, rather than the current scope. Furthermore, Similarly to borrows, it is also possible to partially move a value.
 
 Whenever this new owner goes out-of-scope the Rust compiler knows that the values it owns can no longer be reached and should therefore be free'd. 
 In \autoref{lst:moves}, the value $y$ is moved on line 4 and then accessed again on line 5. The Rust type-checker will reject this program. 

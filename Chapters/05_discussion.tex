@@ -1,10 +1,6 @@
 \section{Discussion}\label{s:discussion}
 
-%%%%%%
-% Ik zou discussion, future work en conclusie 1 section maken
-%%%%%%
-
-In this section, we will reflect on the implementation of the Rust typesystem.
+In this section, we will reflect on our implementation of the Rust type-system in Statix, and provide suggestion for improvements and other future research.
 
 \subsection{Coverage}
 
@@ -12,7 +8,7 @@ In this section, we will describe the features of the type system we have and ha
 
 \subsubsection{Regular types}
 
-Regarding the regular, nominal type system, we have not convered the following features:
+Regarding the regular, nominal type system, we have not covered the following features:
 
 \begin{itemize}
 	\item Parameterized types
@@ -25,51 +21,140 @@ Regarding the regular, nominal type system, we have not convered the following f
 
 \paragraph{Parameterized types}
 
-Rust offers a very rich type system for parameterized types. Any struct, enum or trait can have an arbitrary number of type parameters, and over each of these parameters constraints can be defined. See for example:
+When statix was published\cite{antwerpen}, a sample implementing a parametric type system for Featherweight Generic Java (FGJ) was given \cite{statix_reference_impl}, proving that statix is powerful enough to implement such type systems.
+
+Rust offers a very rich type system for parameterized types. Any struct, enum or trait can have an arbitrary number of type parameters, and over each of these\\ parameters constraints can be defined. See for example:
 
 \begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:param_constraints}, caption={Example of complex parametric constraints}]
-trait ConvertTo<Output> {
-    fn convert(&self) -> Output;
+trait Foo<B> { }
+trait Bar { }
+
+trait ConvertTo<Out> : Bar {
+  type Item;
+  fn convert(i : &Self::Item) -> Out;
 }
 
-trait Double<T1: ConvertTo<i32>, T2> 
-  where ConvertTo<T2> : Copy
-{
-  fn foo(t1: T1, t2: ConvertTo<T2>);
-}
-
-struct Bar<'a, A> where A: 'a {
+struct Baz<'a, A> 
+  where A: 'a {
     a : &'a A
 }
+
+impl<A, B: Bar> Foo<B> for Baz<'_, A> 
+    where A : ConvertTo<B>,
+    A::Item : Foo<B> + Bar
+{ }
 \end{lstlisting}
 
-When statix was published\cite{antwerpen}, a sample implementing a parametric type system for Featherweight Generic Java (FGJ) was given \cite{statix_reference_impl}, proving that statix is powerful enough to implement such type systems. COMPARE THIS TS TO RUST? MISSING FEATURES?
+In this example we see:
+\begin{itemize}
+    \item Trait type parameter declaration (\code{B}) on line 1.
+    \item Trait inheritance (\code{: Bar}) on line 4.
+    \item Associated type declaration (\code{type Item;}) on line 5.
+    \item Self type reference (\code{Self}) on line 6.
+    \item Associated type reference (\code{Self::Item}) on line 6.
+    \item Type parameter reference (\code{Out}) on line 6.
+    \item Struct lifetime parameter declaration (\code{<'a, ...>}) on line 9.
+    \item Struct type parameter declaration (\code{<..., A>}) on line 9.
+    \item Lifetime parameter constraint over type parameter (\code{A: 'a}) on line 10.
+    \item Lifetime parameter reference (\code{&'a}) on line 11.
+    \item Inline type constraints (\code{B: Bar}) on line 14
+    \item Type constraints in a where-clause (\code{where ...}) on line 15.
+    \item Combined type constraints (\code{Foo<B> + Bar}) on line 15.
+\end{itemize}
+
+Most of these constraints can be declared over functions as well as traits and structs.
+
+For this report, the exact semantics of all constructions are not important, but we can see that the rust type systems is very rich in its generics, and we see it as an open challenge to see how well this can be modeled in Statix.
 
 \paragraph{Tuples}
 
-In fact, tuples, and matching expressions on them can be desugared to regular structs, where each component has its index as field name. For example \code{(1, true)} would be desugared to\\ \code{Tuple2<i32, bool> { 0: 1, 1: true} $\}$. This allows accessing tuple members by their index (e.g. \code{tuple.0}, which is valid syntax in Rust.
+In fact, tuples, and matching expressions on them can be desugared to regular structs, where each component has its index as field name. For example \code{(1, true)} would be desugared to\\ \code{Tuple2<i32, bool>}\texttt{\{}\code{ 0: 1, 1: true}\texttt{\}}. This allows\\ accessing tuple members by their index (e.g. \code{tuple.0}), which is valid syntax in Rust.
 
-Therefore, we think that adding tuples to the existing type system will be well doable, and would not given better insight in either Rust or Statix.
+The same holds for 'Tuple structs', which can be regarded as a hybrid structure between tuples and structs. In tuple structs the type does have a name, but the arguments do not. For example \code{struct IntPair(i32, i32);} would be a declaration of a tuple struct with 2 \code{i32} parameters, and \code{IntPair(0, 42)} an instantiation. There structures can be easily desugared to regular structs.
+
+Therefore, we think that adding tuples to the existing type system will be doable, and would not give better insight in either Rust or Statix.
 
 \paragraph{Enums}
 
-% Move checking in enums/ref keyword
+In Rust, values with an enum type can have values of different variants, where each variant can \\independently have multiple arguments. These arguments can again be declared nominal (like structs) or positional (like tuples). 
+
+Enums are a bit more challenging from a type system perspective, for several reasons. Firstly the variant (and therefore the enum fields) can only be determined after matching, which make it harder to type-check enum operations. Maybe this could be modeled in Statix by making each variant a struct-like subtype of the enum.
+
+Secondly, checking if a match is exhaustive (especially when guard conditions are used) requires deep understanding of the (control flow) of the code. It would be a nice challenge to see if this can be implemented in Statix.
+
+Lastly, pattern matching moves the field of the matched enum variant to new variables, or borrows them if the \code{ref} keyword is used. For example, the code in \autoref{lst:match_ref} will not compile, since \code{a} is borrowed, and its parameter is moved to \code{n}. Adding the \code{ref} keyword before \code{n} will resolve this.
+
+\begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:match_ref}, caption={Example of complex parametric constraints}]
+#[derive(Debug)]
+struct A;
+
+enum B { B(A) } 
+
+fn foo1(a: &B) { }
+
+fn main() {
+    let a = B::B(A{});
+    let b = &a;
+    match a {
+        B::B(n) => print!("{:?}", n)
+    }
+    foo(b);
+}
+\end{lstlisting}
 
 \paragraph{Traits}
 
-\paragraph{Arrays and slices}
+Rust provides traits to define "interfaces" and markers for types. Traits can be implemented for other data types, and traits can extend other traits. Moreover, traits can be used to extend library types. We have not implemented traits in our type system. However, as far as we are aware, all Rust rules regarding traits should be easily expressable in Statix, and maybe even in NaBL2. Therefore, from a researching perspective, adding traits to the type system is not very interesting.
+
+\paragraph{Arrays, Vectors and Slices}
+
+Rust provides 3 list data structures: arrays, vectors and slices. None of those is explicitly implemented in our type system. An array is list of elements for which the length is known at compile-time. We think (assuming generics are implemented) it would be easy to implement arrays in our type system. Like with tuples, when the elements of the array are regarded as fields, applying all regular move and borrow rules would create a sound type system for arrays.
+
+Vectors are dynamically sized arrays, implemented as a regular struct in the standard library. Therefore the regular type system should cover Vectors fully.
+
+Slices can be seen as a view of an array or vector, typed as \code{&[T]}. They have a fixes size, known at runtime. For Slices as well as for arrays, it holds that applying the regular rules would create a sound type system. 
+
+Summarizing this, we think implementing arrays in Statix would make the type system more complete, but would not give deeper understanding of the expressiveness of Statix.
 
 \paragraph{Numeric coercions}
 
-As we mentioned in \autoref{sec:regular-typing}, we implemented just one numeric type: \code{NUM()}. This could be extended...
+As we mentioned in \autoref{sec:regular-typing}, we implemented just one numeric type: \code{NUM()}. This could easily be extended to account for all the various numeric types. To do so, type coercion would have to be implemented for the various types that support it. Interestingly enough, variables with a numerical type cannot be coerced to another numerical type; however, literals can be freely coerced to a different numerical type.   
 
 \subsubsection{Move checking}
+In Rust, values can be moved back into a struct after being moved. An example is given in \autoref{lst:moveback}, where \code{x.b} is first moved out to \code{y} and then later moved back, after which it can be moved again. Currently, our\\ implementation is unable to handle this case due to still finding the previous value being moved out in the scope graph. This could easily be fixed by extending the relation to contain information whether a value was moved back. This would then shadow the previous move out.   
 
-% Reassigning moved struct var
+\begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:moveback}, caption={Example of moving a value back}]
+struct Foo {b : Bar}
+struct Bar {}
 
-\subsubsection{Borrow checking}
+fn main() { 
+    let mut x = Foo {b : Bar { }}; 
+    let y = x.b;
+    x.b = y;
+    let z = x.b; 
+}
+\end{lstlisting}
 
+\subsubsection{Borrow checking in functions}
 % Returning references to upper scopes
-% Borrow checking with lifetime parameters in structs/functions
+In Rust, it is also possible to return a borrow to an upper scope. In this case, analysis has to be done to know which variable this borrow is referencing. This can get very complicated, since the return value does not have to refer the original value it is borrowing from, as seen in \autoref{lst:borrowscope}. A more extensive data-flow analysis (for each borrow tracking from which value(s) it (could) be borrowing) is necessary to track such cases. It could be potentially be very cumbersome to implement this in Statix. Therefore, it could be a good idea to consider an alternative DSL for substructural type systems, or integrations with another DSLs to implement this data-flow analysis. 
 
-\subsection{Future Work}\label{s:future_work}
+\begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:borrowscope}, caption={Example of returning a borrow}]
+fn main() { 
+    let mut y : &i32;
+    let x = 5; 
+    let y = {
+        let z = &x;
+        z
+    };
+}
+\end{lstlisting}
+
+Besides this, when we started this project, non-lexical lifetimes were implemented in the 2018 edition of Rust, while the 2015 edition still used lexical lifetimes. Since non-lexical lifetimes would essentially require a (variation on a) live variable data-flow analysis, which is difficult to implement in Statix, we choose to implement lexical lifetimes. However, Rust 1.36 backports non-lexical lifetimes to the 2015 edition which means lexical lifetimes are not in use anymore. This somewhat limits the relevance of our study, but on the other hand we think the achieved result clearly shows certain substructural analyses are possible in Statix, which is a valuable insight. 
+
+\subsubsection{Lifetime checking between functions}
+
+Lifetimes in Rust are not restricted to function internals only. A function signature can also impose constraints on the lifetimes of its parameters and return value, and other types can declare relations between lifetimes of reference fields.
+
+Perhaps the most interesting future research direction we will propose here is finding an encoding for this problem in Statix. A possible direction is to assign every value a lifetime specifier, and specify relations over those. For any call to a language construct that imposes lifetime constraints (like a function or a struct initializer) these constraints could be instantiated for the concrete parameters it is called with, and validated with abovementioned lifetime relations. Inside the language construct imposing the constraints, these could be instantiated as known lifetime relations as well. While we think this line of thinking is worthwhile to investigate, it will not be trivial, and therefore deepen the understanding of both Rust and Statix, when pursued.
+

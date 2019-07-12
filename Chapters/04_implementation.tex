@@ -1,6 +1,6 @@
 \section{Implementation} \label{s:implementation}
 
-In this chapter we will describe how we implemented several features of the Rust type system in Statix. First, we shortly focus on the regular typing of variables and expressions. In the second part we will explain how we implemented several substructural/linear type system features.
+In this chapter we will describe how we implemented several features of the Rust type system in Statix. First, we shortly focus on the regular typing of variables and expressions. In the second part we explain how we\\ implemented several substructural/linear type system features.
 
 \subsection{Scoping and Name resolution}
 
@@ -11,7 +11,7 @@ To prevent forward name resolution we decided to use a scope for every statement
 
 \subsection{Regular typing} \label{sec:regular-typing}
 
-The basis of the Rust type system are types as they are occurring in many statically-typed languages. As such, we created rules \code{typeOfExpr} that give every expression its appropriate type. As primary types, \code{BOOL()}, \code{NUM()} and \code{UNIT()}, are available. Regarding numeric types, we choose to not exactly resemble the Rust type system with respect to sizes and signs (i.e. having \code{i8}, \code{u64} etc.), but have only one type: \code{NUM()}. Having multiple numeric types would come with a lot of inference rules and type coercion, which is out of scope for this project.
+The basis of the Rust type system are types as they occur in many statically-typed languages. As such, we created rules \code{typeOfExpr} that give every expression its appropriate type. As primary types, \code{BOOL()}, \code{NUM()} and \code{UNIT()}, are available. Regarding numeric types, we choose to not exactly resemble the Rust type system with respect to sizes and signs (i.e. having \code{i8}, \code{u64} etc.), but have only one type: \code{NUM()}. Having multiple numeric types would come with a lot of inference rules and type coercion, which is out of scope for this project.
 
 For each variable, we annotated the scope graph with \code{type: occurrence -> DataType} relations, which can be queried from subscopes.
 
@@ -41,7 +41,7 @@ Eventually, we went for the third options, since it gave the most flexibility on
 
 \subsubsection{References}
 
-In order to implement a borrow checker, having reference types is important. We thought if 2 ways to implement references:
+In order to implement a borrow checker, having reference types is important. We thought of 2 ways to implement references:
 \begin{enumerate}
     \item Have 2 additional types: \\ 
     \code{MutRef: DataType -> DataType} and\\ \code{ImmutRef: DataType -> DataType}
@@ -59,7 +59,7 @@ In this section we will describe our implementation of the more advanced type sy
 
 \subsubsection{Move checking}
 
-The first type system feature we will discuss is move checking. To quickly recall the basics from section XX:
+The first type system feature we will discuss is move checking. To quickly recall the basics from \autoref{sec:ownership}:
 \begin{itemize}
     \item "Moving" is assigning a variable or field with a type that does not implement the \code{Copy} trait to another variable or field.
     \item Move checking is checking that each variable or field is moved at most once.
@@ -67,15 +67,15 @@ The first type system feature we will discuss is move checking. To quickly recal
 
 \paragraph{Design choices}
 
-In this subsection, we discuss the most fundamental design choices for this feature.
+In this subsection, we discuss the most fundamental design choices for this feature. 
 
-Firstly, we implemented the \code{Copy} trait by defining a relation:\ \code{copy:}\\\code{DataType -> Copyable}, where the sort \code{Copyable} has 2 constructors: \code{COPY()} and \code{NOCOPY()}. We decided to use a dedicated relation because we did not implement trait implementation in our type system. For all existing types, this relation is declared in the root scope, so that it can be queried from any scope.
+Firstly, we implemented the \code{Copy} trait by defining a relation:\ \code{copy: DataType -> Copyable}, where the sort \code{Copyable} has 2 constructors: \code{COPY()} and \code{NOCOPY()}. We decided to use a dedicated relation because we did not implement trait implementation in our type system. For all existing types, this relation is declared in the root scope, so that it can be queried from any scope.
 
-Secondly (and contrary to borrow checking, as we will see), it is important to note that moving occurs on \textit{control-flow graph} level. Once a value is moved, it will stay moved, even when the inner scope in which this move might occur ends. Therefore, we decided to build a control-flow graph, in addition to the scope graph.
+Secondly (and contrary to borrow checking, as we will see), it is important to note that moving occurs on\\ \textit{control-flow graph} level. Once a value is moved, it will stay moved, even when the inner scope in which this move might occur ends. Therefore, we decided to build a control-flow graph, in addition to the scope graph.
 
 While it would technically be possible to have one big scope and control-flow graph, with labels distinguishing scope and control-flow edges, we decided not to do so, but instead implement 2 distinguished graphs. We think combining the graphs makes maintaining the graph more complex, while it does not add value, since no query requires information from both graphs.
 
-Thirdly, only assignment operations that have a variable as source, and passing a variable as parameter to a function can violate move rules. The Rust typing rules ensure that any other owned expression can not be references from another place, and therefore can not be moved twice. For example: in the snippet \code{let v = foo().a}, the return value of \code{foo()} must be owned, and the owning rules we are implementing guarantee that no other variable will reference that value. As far as we are aware, this holds for every language construct. 
+Thirdly, only assignment operations that have a variable as source, and passing a variable as parameter to a function can violate move rules. The Rust typing rules ensure that any other owned expression can not be references from another place, and therefore can not be moved twice. For example: in the snippet\\ \code{let v = foo().a}, the return value of \code{foo()} must be owned, and the owning rules we are implementing guarantee that no other variable will reference that value. As far as we are aware, this holds for every language construct. 
 
 \paragraph{Basic move implementation}
 
@@ -87,3 +87,48 @@ Moves from struct fields to other targets have somewhat more difficult semantics
 
 We implemented this type system feature similar to regular moves. Whenever a field is moved, we add a\\ \code{fieldMove(var, fields)} to its control-flow graph node. On every field usage, we query all parent scopes for usage of fields of the same variable, and check if those fields are not a sub- or superfield of the used field.
 
+\paragraph{Evaluation}
+
+We think the implementation we give is relatively good. A minor point of improvement would be that we could have been more generic by implementing \code{move(var)} as \code{fieldMove(var, [])}. That last rule would regard all fields of \code{var} moved, which is effectively the same as having \code{var} itself moved. On the contrary, explicitly expressing both \code{move} and \code{fieldMove} is easier to read, and would make good error messages for full, partial and collateral moves easier to implement in the future.
+
+\subsubsection{Borrow checking}
+
+Another advanced type system feature that we implemented is the borrow checker. In Rust, a value can be borrowed, which can be seen as temporary taking ownership. Rust has two different types of borrowing: immutable and mutable. When a value is borrowed, no operation may be applied on it.
+In general, the borrow checker performs 3 major checks. First, it checks if no operation is applied on a borrowed value. Secondly, when it encounters a mutable borrow, it checks of no other borrows, neither mutable nor immutable exist. Lastly it checks that the borrowed value does not live longer than the value it borrows from.
+
+\paragraph{Implementation}
+
+In analogy to the move checker, we defined 4 relations:
+\begin{itemize}
+	\item \code{mutBorrowed : occurrence}
+	\item \code{fieldMutBorrowed : occurrence * list(Id)}
+	\item \code{immutBorrowed : occurrence}
+	\item \code{fieldImmutBorrowed : occurrence * list(Id)}
+\end{itemize}
+
+Each respectively indicating if a variable or field is either mutably or immutably borrowed. Whenever one of these occurs, we declare the relevant relation in the \textit{scope graph}. The first check (variable not moved when borrowed) is then easily implemented by querying all above mentioned relations on every variable use (except borrowing itself). The second check is implemented by performing the following 2 checks:
+\begin{itemize}
+    \item When a variable or field is borrowed immutably, query \code{mutBorrowed} and \code{fieldMutBorrowed} for that variable, and assert that no such relation is declared.
+    \item When a variable or field is borrowed mutably, query all four relations and assert no such relation is declared.
+\end{itemize}
+
+The third check is the most difficult, and is implemented only partially. In order to explain it, it is important to distinguish the 3 different scopes in the code:
+\begin{itemize}
+    \item The scope the source variable (the value borrowed from) is declared
+    \item The scope the target variable (the borrow) is declared.
+    \item The scope the borrow takes place. Note that, when reassigning a mutable variable in an inner scope, the last 2 scopes do not need to coincide.
+\end{itemize}
+
+The third scope is easily resolved, since it is passed to the \code{typeOfExpr} rule. The other two can be resolved using name resolution, and the path the name resolution query yields.
+
+Another important concept to notice of are the different ways of determining lifetimes. The history of Rust has known 2 variants of this: lexical and non-lexical. In the lexical lifetime variant, a variable is dropped when it reaches the end of the lexical scope in which it is declared. When multiple variables are declared in the same scope, they are dropped in reverse order. However, when non-lexical lifetimes are used, a variable is dropped immediately when it will not be used anymore, neither directly nor via references.
+
+In this project, we implemented lexical lifetimes, because non-lexical lifetimes are difficult to express in Statix, since it has no data-flow analysis abstractions (More on this in section XXX). Note that our earlier choice to use a separate scope for every statement automatically ensures that the variables are dropped in reverse declaration order.
+
+Having this concept right, we can finally explain the third borrow checking rule. After resolving the declaration scopes of the source and target variables, the algorithms tries to \textit{resolve the source variable from the scope in which the target variable is declared}. The rationale behind this implementation is that variables are dropped in the reverse order in which they are declared. When this resolution succeeds, it implies the source variable is declared before the target variable. Then the target must be dropped earlier than the source variable, meaning the borrow does not outlive the value.
+
+\paragraph{Evaluation}
+
+In our opinion, the first 2 checks are implemented in an easy to understand way. Like with the move checks, generalizing the relations by encoding variables as field borrows with an empty array and mutability as a parameter would have removed duplication, but more code a bit more difficult to understand.
+
+The implementation of the third check relies on the fact that variables are dropped in the reverse order in which they are declared. However, exceptions to this rule occur when moves take place. While the source variable can not be moved when it is borrowed, a borrow itself can be moved to another variable, or returned from an upper scope. Our type system does not have a mechanism that accounts for such situations, and will therefore not generate errors. In section XXX, we will explain in more detail how such cases could be detected as well. 
