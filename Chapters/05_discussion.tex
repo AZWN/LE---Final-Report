@@ -25,13 +25,29 @@ Regarding the regular, nominal type system, we have not convered the following f
 
 \paragraph{Parameterized types}
 
-Rust offers a very rich type system for parameterized types. Any struct, enum or trait can have an arbitrary number of type parameters, and over each of these parameters constraints can be defined, like XXXXXX.
+Rust offers a very rich type system for parameterized types. Any struct, enum or trait can have an arbitrary number of type parameters, and over each of these parameters constraints can be defined. See for example:
 
-When statix was PUBLISHED, a sample implementing a parametric type system was given, proving that statix is powerfull enough to implement such type systems. COMPARE THIS TS TO RUST? MISSING FEATURES?
+\begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:param_constraints}, caption={Example of complex parametric constraints}]
+trait ConvertTo<Output> {
+    fn convert(&self) -> Output;
+}
+
+trait Double<T1: ConvertTo<i32>, T2> 
+  where ConvertTo<T2> : Copy
+{
+  fn foo(t1: T1, t2: ConvertTo<T2>);
+}
+
+struct Bar<'a, A> where A: 'a {
+    a : &'a A
+}
+\end{lstlisting}
+
+When statix was published\cite{antwerpen}, a sample implementing a parametric type system for Featherweight Generic Java (FGJ) was given \cite{statix_reference_impl}, proving that statix is powerful enough to implement such type systems. COMPARE THIS TS TO RUST? MISSING FEATURES?
 
 \paragraph{Tuples}
 
-In fact, tuples, and matching expressions on them can be desugared to regular structs, where each component has its index as field name. For example \code{(1, true)} would be desugared to \code{Tuple2<i32, bool> { 0: 1, 1: true}}. This allows accessing tuple members by their index (e.g. \code{tuple.0}, which is valid syntax in Rust.
+In fact, tuples, and matching expressions on them can be desugared to regular structs, where each component has its index as field name. For example \code{(1, true)} would be desugared to\\ \code{Tuple2<i32, bool> { 0: 1, 1: true} $\}$. This allows accessing tuple members by their index (e.g. \code{tuple.0}, which is valid syntax in Rust.
 
 Therefore, we think that adding tuples to the existing type system will be well doable, and would not given better insight in either Rust or Statix.
 
@@ -45,7 +61,7 @@ Therefore, we think that adding tuples to the existing type system will be well 
 
 \paragraph{Numeric coercions}
 
-As we mentioned in section XXX, we implemented just one numeric type: \code{NUM()}
+As we mentioned in \autoref{sec:regular-typing}, we implemented just one numeric type: \code{NUM()}. This could be extended...
 
 \subsubsection{Move checking}
 

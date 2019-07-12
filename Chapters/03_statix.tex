@@ -1,1 +1,31 @@
 \section{Introduction to Statix}\label{s:statix}
+Statix is a specification language for static semantics. In Statix, constraint rules can be defined using various relations. In this section, we explain the various language features we used to implement the Rust type-system.
+
+\subsection{Basic constraints} 
+One such constraint can be seen in \autoref{lst:statix_basic}. In this case we constrain the type of \code{e1} and \code{e2} of the \code{Sum/2} constructor to be \code{NUM()}.  
+
+ \begin{lstlisting}[showstringspaces=false, frame=single, escapechar=~, label={lst:statix_basic}, caption={Example of simple constraint rule}]
+typeOfExpr(s, Sum(e1, e2)) = NUM() :- 
+	typeOfExpr(s, e1) == NUM(),
+	typeOfExpr(s, e2) == NUM().
+  \end{lstlisting}
+ 
+\subsection{Scoping and Name resolution}
+In Statix, we can define relations on a scope graph. 
+As example, we define the relation \code{type} as \code{occurrence -> Type}. Using this relation, an occurrence can be resolved to a type on a scope graph. In \autoref{lst:scope}, the syntax for declaration and referencing  are shown. The declaration is done by putting a relation on scope \code{s}, with occurrence \code{Var} and the result of this relation is \code{typeOfVar}. \\
+
+When referencing the variable, we query the scope graph for the same occurrence again. However, this returns more than just the type of the occurrence. A path \code{p}, which refers to the scope in which the occurrence was found, and a relation \code{r}, the name of the relation, are also returned. It is also to know that such a reference can be matched with an empty array. This can be used to check whether there are no relations on that occurrence in the current scope graph. 
+
+\begin{lstlisting}[showstringspaces=false, frame=single, escapechar=~, label={lst:scope}, caption={Declaring and resolving on a scope}]
+// Declaration:
+s -> Var{name@-} with type typeOfVar
+...
+// Reference: 
+type of Var{name@-} 
+    in s |-> [(p, (r, typeOfVar))].
+\end{lstlisting}
+
+\subsection{Scopes as types}
+A major feature in the Statix language is the ability to use scopes as types. This can be used to resolve the names of sub-fields of record and struct types\cite{antwerpen}. In \autoref{sec:struct-type}, we explain the relation used to resolve fields of a struct.  
+
+% scopes, scope graphs, declarations, queries
