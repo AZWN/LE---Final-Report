@@ -39,6 +39,8 @@ The second option would solve a many of these problems. By assigning expressions
 
 Eventually, we went for the third options, since it gave the most flexibility on when to use mutability, and when not to. Possible coercions from mutable to immutable types are implemented by applying the rule \code{stripMut}.
 
+However, speaking in hindsight, it would have been better not to encode variable mutability in the type system, but instead encode it with a separate relation \code{mutable: occurrence * Mutability}, because managing the \code{MUT(_)} instances properly turned out to be a tough task.
+
 \subsubsection{References}
 
 In order to implement a borrow checker, having reference types is important. We thought of 2 ways to implement references:
@@ -49,7 +51,7 @@ In order to implement a borrow checker, having reference types is important. We 
     \\ \code{REF: Mutability * DataType -> DataType}
 \end{enumerate}
 
-The first important thing to note here is that variable mutability is not the same as reference mutability. Variable mutability means that a variable (or a field, in case of a struct) can be reassigned.
+The first important thing to note here is that variable mutability is not the same as reference mutability. Variable mutability means that a variable (or a field, in case of a struct) can be reassigned, while reference mutability means that (fields of) the value it points to can be mutated. For example \code{let mut a : &mut A}, means that \code{a} can be assigned a new value (i.e. it can later in the program point to a different value), and the value it points to can be changed.
 
 Both ways are equivalent in expressiveness and verboseness. We choose the second options, since it made it easier for us to handle cases where mutability is not important. In that case, we could simply match on a wildcard (\code{_}), instead of writing 2 separate rules.
 
@@ -59,7 +61,7 @@ In this section we will describe our implementation of the more advanced type sy
 
 \subsubsection{Move checking}
 
-The first type system feature we will discuss is move checking. To quickly recall the basics from \autoref{sec:ownership}:
+The first type system feature we will discuss is move checking. We quickly recall the basics from \autoref{sec:ownership}:
 \begin{itemize}
     \item "Moving" is assigning a variable or field with a type that does not implement the \code{Copy} trait to another variable or field.
     \item Move checking is checking that each variable or field is moved at most once.
@@ -69,7 +71,7 @@ The first type system feature we will discuss is move checking. To quickly recal
 
 In this subsection, we discuss the most fundamental design choices for this feature. 
 
-Firstly, we implemented the \code{Copy} trait by defining a relation:\ \code{copy: DataType -> Copyable}, where the sort \code{Copyable} has 2 constructors: \code{COPY()} and \code{NOCOPY()}. We decided to use a dedicated relation because we did not implement trait implementation in our type system. For all existing types, this relation is declared in the root scope, so that it can be queried from any scope.
+Firstly, we implemented the \code{Copy} trait by defining a relation:\ \code{copy: DataType -> Copyable}, where the sort \code{Copyable} has 2 constructors: \code{COPY()} and \code{NOCOPY()}. We decided to use a dedicated relation because we did not implement traits in our type system. For all existing types, this relation is declared in the root scope, so that it can be queried from any scope.
 
 Secondly (and contrary to borrow checking, as we will see), it is important to note that moving occurs on\\ \textit{control-flow graph} level. Once a value is moved, it will stay moved, even when the inner scope in which this move might occur ends. Therefore, we decided to build a control-flow graph, in addition to the scope graph.
 
@@ -116,8 +118,9 @@ The third check is the most difficult, and is implemented only partially. In ord
 \begin{itemize}
     \item The scope the source variable (the value borrowed from) is declared
     \item The scope the target variable (the borrow) is declared.
-    \item The scope the borrow takes place. Note that, when reassigning a mutable variable in an inner scope, the last 2 scopes do not need to coincide.
+    \item The scope the borrow takes place.
 \end{itemize}
+Note that, when reassigning a mutable variable in an inner scope, the last 2 scopes do not need to coincide.
 
 The third scope is easily resolved, since it is passed to the \code{typeOfExpr} rule. The other two can be resolved using name resolution, and the path the name resolution query yields.
 

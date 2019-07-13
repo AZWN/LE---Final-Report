@@ -2,7 +2,7 @@
 Rust is a fairly new programming language developed by \textbf{Mozilla}. The language is well known due to its\\ type-system which guarantees the absence of data-races and use-after-free. In this section we explain the concepts of data-races and use-after-free and how Rust prevents these. Furthermore, we explain the notion of ownership and moving a variable. 
 
 \subsection{Use-after-free} 
-In \autoref{lst:useafterfree} an example of use-after-free is shown. \code{x} is implicitly free'd in line 6; however, the reference of \code{x} is assigned to \code{y} and still lives when \code{x} is freed. This reference now points to an arbitrary piece of data and should therefore not be used, since this could leak other data of the program. 
+In \autoref{lst:useafterfree} an example of use-after-free is shown. \code{x} is implicitly freed in line 6; however, the reference of \code{x} is assigned to \code{y} and still lives when \code{x} is freed. This reference now points to an arbitrary piece of data and should therefore not be used, since this could leak other data of the program. 
 
  \begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:useafterfree}, caption={Example of use-after-free}]
 fn main() { 
@@ -15,10 +15,10 @@ fn main() {
 }
 
 \end{lstlisting}
-In rust, this would result in an error. Since the reference to \code{x} outlives the variable itself. 
+In Rust, this would result in an error. Since the reference to \code{x} outlives the variable itself. 
 
 \subsection{Data-races}
-Data races occur when the sequence of threads executed matters for the state of the program. This can occur when two or more pointers have access to the same piece of data and when one of these pointers has write access. 
+Data races occur when the order in which threads execute matters for the state of the program. This can occur when two or more pointers have access to the same piece of data and when one of these pointers has write access. 
 
  \begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:dataraces_full}, caption={Example of potential data-race}]
 fn main() { 
@@ -29,7 +29,7 @@ fn main() {
     mut_func(&mut y) ; // Not okay 
 }
 \end{lstlisting}
-In \autoref{lst:dataraces_full}, an example is given that illustrates a potential race-condition. The first two borrows on line 4 and 5 are allowed, since they both borrow $y$ immutably. This means that the second criteria of race-condition is not satisfied. However, if $y$ is now borrowed mutably, like in line 6, the second criteria is full-filled. We now have multiple pointers referencing the same piece of data and one of them is mutable. Therefore, this could potentially cause a race-condition. The Rust compiler thus rejects this program.\\
+In \autoref{lst:dataraces_full}, an example is given that illustrates a potential race-condition. The first two borrows on line 4 and 5 are allowed, since they both borrow $y$ immutably. This means that the second criterium of race-condition is not satisfied. However, if $y$ is now borrowed mutably, like in line 6, the second criterium is fullfilled. We now have multiple pointers referencing the same piece of data and one of them is mutable. Therefore, this could potentially cause a race-condition. The Rust compiler thus rejects this program.\\
 
 However, it is allowed to borrow a value in a lower scope and then later borrowing it mutably in a higher scope. This is illustrated in \autoref{lst:dataraces_scope}.
 
@@ -43,7 +43,7 @@ fn main() {
 }
 \end{lstlisting}
 
-Borrowing gets more complicated when we introduce the notion of partial borrows. Sub-fields of a struct can be freely borrowed, since these fields are disjoint. In \autoref{lst:dataraces_partial}, we show a case of partial borrowing. Here, the sub-fields $a$ and $b$ can be freely borrowed. However, when the super-field $y$ (or a sub-field of $a$ or $b$) is borrowed, the rust compiler will reject the program.
+Borrowing gets more complicated when we introduce the notion of partial borrows. Sub-fields of a struct can be freely borrowed when these fields are disjoint. In \autoref{lst:dataraces_partial}, we show a case of partial borrowing. Here, the sub-fields $a$ and $b$ can be freely borrowed. However, when the super-field $y$ (or a sub-field of $a$ or $b$) is borrowed, the Rust compiler will reject the program.
  \begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:dataraces_partial}, caption={Example of partial borrows}]
 fn main() { 
     let mut y = Foo{a : 3, b : 5};
@@ -55,9 +55,9 @@ fn main() {
 \end{lstlisting}
 
 \subsection{Ownership} \label{sec:ownership}
-In Rust, ownership of values allows Rust to be\\ memory-safe without the use of a garbage collector\cite{rust_book_ownership}. When assigning values to another owner, the ownership of the value is moved. The original owner of the value can then no longer be used to reference the value. The change of ownership is permanent and is based on the control-flow of the program, rather than the current scope. Furthermore, Similarly to borrows, it is also possible to partially move a value.
+In Rust, ownership of values allows Rust to be\\ memory-safe without the use of a garbage collector\cite{rust_book_ownership}. When assigning values to another owner, the ownership of the value is moved. The original owner of the value can then no longer be used to reference the value. The change of ownership is permanent and is based on the control-flow of the program, rather than the current scope. Furthermore, similarly to borrows, it is also possible to partially move a value.
 
-Whenever this new owner goes out-of-scope the Rust compiler knows that the values it owns can no longer be reached and should therefore be free'd. 
+Whenever this new owner goes out of scope the Rust compiler knows that the values it owns can no longer be reached and should therefore be freed. 
 In \autoref{lst:moves}, the value $y$ is moved on line 4 and then accessed again on line 5. The Rust type-checker will reject this program. 
     
 \begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:moves}, caption={Example of moving variables}]

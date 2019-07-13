@@ -64,13 +64,13 @@ In this example we see:
 
 Most of these constraints can be declared over functions as well as traits and structs.
 
-For this report, the exact semantics of all constructions are not important, but we can see that the rust type systems is very rich in its generics, and we see it as an open challenge to see how well this can be modeled in Statix.
+For this report, the exact semantics of all constructions are not important, but we can see that the Rust type systems is very rich in its generics, and we see it as an open challenge to see how well this can be modeled in Statix.
 
 \paragraph{Tuples}
 
 In fact, tuples, and matching expressions on them can be desugared to regular structs, where each component has its index as field name. For example \code{(1, true)} would be desugared to\\ \code{Tuple2<i32, bool>}\texttt{\{}\code{ 0: 1, 1: true}\texttt{\}}. This allows\\ accessing tuple members by their index (e.g. \code{tuple.0}), which is valid syntax in Rust.
 
-The same holds for 'Tuple structs', which can be regarded as a hybrid structure between tuples and structs. In tuple structs the type does have a name, but the arguments do not. For example \code{struct IntPair(i32, i32);} would be a declaration of a tuple struct with 2 \code{i32} parameters, and \code{IntPair(0, 42)} an instantiation. There structures can be easily desugared to regular structs.
+The same holds for 'Tuple structs', which can be regarded as a hybrid structure between tuples and structs. In tuple structs the type does have a name, but the arguments do not. For example \code{struct IntPair(i32, i32);} would be a declaration of a tuple struct with 2 \code{i32} parameters, and \code{IntPair(0, 42)} an instantiation. These structures can be easily desugared to regular structs, by assigning the index as field name.
 
 Therefore, we think that adding tuples to the existing type system will be doable, and would not give better insight in either Rust or Statix.
 
@@ -80,9 +80,9 @@ In Rust, values with an enum type can have values of different variants, where e
 
 Enums are a bit more challenging from a type system perspective, for several reasons. Firstly the variant (and therefore the enum fields) can only be determined after matching, which make it harder to type-check enum operations. Maybe this could be modeled in Statix by making each variant a struct-like subtype of the enum.
 
-Secondly, checking if a match is exhaustive (especially when guard conditions are used) requires deep understanding of the (control flow) of the code. It would be a nice challenge to see if this can be implemented in Statix.
+Secondly, checking if a match is exhaustive (especially when guard conditions are used) requires deep understanding of (the control flow of) code. It would be a nice challenge to see if this can be implemented in Statix.
 
-Lastly, pattern matching moves the field of the matched enum variant to new variables, or borrows them if the \code{ref} keyword is used. For example, the code in \autoref{lst:match_ref} will not compile, since \code{a} is borrowed, and its parameter is moved to \code{n}. Adding the \code{ref} keyword before \code{n} will resolve this.
+Lastly, pattern matching moves the field of the matched enum variant to new variables, or borrows them if the \code{ref} keyword is used. For example, the code in \autoref{lst:match_ref} will not compile, since \code{a} is borrowed, and its parameter is moved to \code{n}. Adding the \code{ref} keyword before \code{n} will resolve this. These move and borrow rules should also be implented well in Statix.
 
 \begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:match_ref}, caption={Example of ref keyword}]
 #[derive(Debug)]
@@ -159,4 +159,10 @@ Besides this, when we started this project, non-lexical lifetimes were implement
 Lifetimes in Rust are not restricted to function internals only. A function signature can also impose constraints on the lifetimes of its parameters and return value, and other types can declare relations between lifetimes of reference fields.
 
 Perhaps the most interesting future research direction we will propose here is finding an encoding for this problem in Statix. A possible direction is to assign every value a lifetime specifier, and specify relations over those. For any call to a language construct that imposes lifetime constraints (like a function or a struct initializer) these constraints could be instantiated for the concrete parameters it is called with, and validated with abovementioned lifetime relations. Inside the language construct imposing the constraints, these could be instantiated as known lifetime relations as well. While we think this line of thinking is worthwhile to investigate, it will not be trivial, and therefore deepen the understanding of both Rust and Statix, when pursued.
+
+\subsection{Experiences with Statix}
+
+One of the goals of our project was to improve our understanding of the possibilities and limitations of Statix. Firstly, we must admit we are impressed by the expressiviness of the language. The relation/query mechnism the language provides is very powerfull to encode all kinds of information, which also holds for the scopes as types principle. Also, the fact that the language is statically typed made development a lot easier.
+
+The major limitation we had to deal with is the lack of context information. When type-checking a variable, we had to make separate rules for situations where moves take place, and where they do not. It would have been more clean to be able to decide that in the rule, but we could not think of a clean way to implement that. Maybe a feature that allows to query AST nodes whould help in such situations.
 
