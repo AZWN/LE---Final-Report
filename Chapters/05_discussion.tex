@@ -84,7 +84,7 @@ Secondly, checking if a match is exhaustive (especially when guard conditions ar
 
 Lastly, pattern matching moves the field of the matched enum variant to new variables, or borrows them if the \code{ref} keyword is used. For example, the code in \autoref{lst:match_ref} will not compile, since \code{a} is borrowed, and its parameter is moved to \code{n}. Adding the \code{ref} keyword before \code{n} will resolve this.
 
-\begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:match_ref}, caption={Example of complex parametric constraints}]
+\begin{lstlisting}[language=rust, showstringspaces=false, escapechar=~, label={lst:match_ref}, caption={Example of ref keyword}]
 #[derive(Debug)]
 struct A;
 
@@ -136,6 +136,8 @@ fn main() {
 \end{lstlisting}
 
 \subsubsection{Borrow checking in functions}
+
+\label{sss:borrow-checking-in-functions}
 % Returning references to upper scopes
 In Rust, it is also possible to return a borrow to an upper scope. In this case, analysis has to be done to know which variable this borrow is referencing. This can get very complicated, since the return value does not have to refer the original value it is borrowing from, as seen in \autoref{lst:borrowscope}. A more extensive data-flow analysis (for each borrow tracking from which value(s) it (could) be borrowing) is necessary to track such cases. It could be potentially be very cumbersome to implement this in Statix. Therefore, it could be a good idea to consider an alternative DSL for substructural type systems, or integrations with another DSLs to implement this data-flow analysis. 
 
